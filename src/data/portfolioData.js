@@ -2,44 +2,50 @@ export const services = [
   {
     title: "Desarrollo web",
     description:
-      "Creamos sitios web modernos, rápidos y adaptables para fortalecer la presencia digital de marcas, empresas e instituciones.",
-    features: ["Diseño responsive", "Integración con WhatsApp", "SEO técnico", "Formularios inteligentes"],
+      "Creamos sitios, plataformas y aplicaciones web modernas, rápidas y escalables, con interfaces profesionales, paneles administrativos y experiencias optimizadas para cada dispositivo.",
+    features: [
+      "Sitios web y landing pages",
+      "Aplicaciones web a medida",
+      "Dashboards administrativos",
+      "Integración con APIs y servicios",
+    ],
     icon: "web",
   },
   {
-    title: "Aplicaciones web personalizadas",
+    title: "Desarrollo móvil",
     description:
-      "Desarrollamos sistemas a medida para optimizar procesos internos, centralizar información y mejorar la productividad.",
-    features: ["Sistemas administrativos", "Inventarios", "CRM", "Reservas y automatización"],
-    icon: "app",
-  },
-  {
-    title: "Aplicaciones Android",
-    description:
-      "Diseñamos aplicaciones móviles intuitivas y funcionales para empresas, instituciones, restaurantes y emprendimientos.",
-    features: ["Experiencia móvil", "Notificaciones", "Consumo de APIs", "Despliegue escalable"],
+      "Diseñamos y desarrollamos aplicaciones móviles profesionales para Android e iOS, con interfaces fluidas, alto rendimiento e integración con servicios empresariales.",
+    features: [
+      "Aplicaciones Android e iOS",
+      "Interfaces modernas y fluidas",
+      "Notificaciones y consumo de APIs",
+      "Publicación y escalabilidad",
+    ],
     icon: "mobile",
   },
   {
-    title: "Comercio electrónico",
+    title: "Factura electrónica",
     description:
-      "Implementamos plataformas de venta online para gestionar productos, pedidos, clientes y pagos desde un panel centralizado.",
-    features: ["Catálogo digital", "Carrito", "Panel administrativo", "Integración de pagos"],
+      "Integramos facturación electrónica con tus plataformas, sistemas administrativos, tiendas virtuales o servicios existentes, mediante flujos empresariales compatibles con procesos tipo DIAN.",
+    features: [
+      "Integración con factura electrónica",
+      "Generación y validación de documentos",
+      "Conexión con sistemas existentes",
+      "Procesos empresariales automatizados",
+    ],
     icon: "shop",
   },
   {
     title: "Soluciones SaaS",
     description:
-      "Construimos plataformas en la nube accesibles desde cualquier dispositivo, con seguridad, escalabilidad y actualizaciones continuas.",
-    features: ["Acceso en tiempo real", "Escalabilidad", "Seguridad", "Menores costos operativos"],
+      "Construimos plataformas empresariales en la nube, accesibles desde cualquier dispositivo, con módulos conectados, seguridad, disponibilidad y capacidad para crecer junto al negocio.",
+    features: [
+      "Plataformas cloud empresariales",
+      "Acceso centralizado y seguro",
+      "Módulos y procesos conectados",
+      "Escalabilidad y operación continua",
+    ],
     icon: "cloud",
-  },
-  {
-    title: "Automatización empresarial",
-    description:
-      "Integramos procesos, datos y flujos de trabajo para reducir tareas manuales y mejorar la eficiencia operativa.",
-    features: ["Integraciones", "Reportes", "Procesos automáticos", "Control operativo"],
-    icon: "automation",
   },
 ];
 
@@ -79,18 +85,46 @@ export const projects = [
 ];
 
 export const processSteps = [
-  ["01", "Análisis", "Identificamos necesidades, alcance, usuarios y objetivos del proyecto."],
-  ["02", "Planeación", "Definimos arquitectura, cronograma, prioridades y estrategia tecnológica."],
-  ["03", "Diseño", "Creamos interfaces modernas, claras y coherentes con la identidad de la marca."],
-  ["04", "Desarrollo", "Construimos una solución robusta, escalable y preparada para crecer."],
-  ["05", "Pruebas", "Validamos funcionalidad, rendimiento, seguridad y experiencia de usuario."],
-  ["06", "Implementación", "Publicamos el sistema y acompañamos su puesta en marcha."],
-  ["07", "Acompañamiento", "Brindamos soporte, mantenimiento y mejora continua."],
+  [
+    "01",
+    "Análisis",
+    "Identificamos necesidades, alcance, usuarios y objetivos del proyecto.",
+  ],
+  [
+    "02",
+    "Planeación",
+    "Definimos arquitectura, cronograma, prioridades y estrategia tecnológica.",
+  ],
+  [
+    "03",
+    "Diseño",
+    "Creamos interfaces modernas, claras y coherentes con la identidad de la marca.",
+  ],
+  [
+    "04",
+    "Desarrollo",
+    "Construimos una solución robusta, escalable y preparada para crecer.",
+  ],
+  [
+    "05",
+    "Pruebas",
+    "Validamos funcionalidad, rendimiento, seguridad y experiencia de usuario.",
+  ],
+  [
+    "06",
+    "Implementación",
+    "Publicamos el sistema y acompañamos su puesta en marcha.",
+  ],
+  [
+    "07",
+    "Acompañamiento",
+    "Brindamos soporte, mantenimiento y mejora continua.",
+  ],
 ];
 
 export const companyStats = [
   ["4+", "Soluciones desarrolladas"],
-  ["6", "Líneas de servicio"],
+  ["4", "Líneas de servicio"],
   ["100%", "Enfoque personalizado"],
   ["24/7", "Disponibilidad digital"],
 ];
