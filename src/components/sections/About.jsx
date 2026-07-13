@@ -1,1341 +1,900 @@
-import { useEffect, useRef } from "react";
-import * as THREE from "three";
-import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import {
-  CalendarDays,
-  Rocket,
+  Bolt,
+  Eye,
+  Handshake,
+  Lightbulb,
   ShieldCheck,
   Target,
-  Telescope,
   UsersRound,
 } from "lucide-react";
 
-import { companyStats } from "../../data/portfolioData";
-
-const STAT_ICONS = [CalendarDays, Rocket, UsersRound, ShieldCheck];
-
-/* =========================================================
-   UTILIDADES
-========================================================= */
-
-function clamp01(value) {
-  return Math.min(1, Math.max(0, value));
+const ABOUT_STYLES = String.raw`
+.about-section {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(54px, 5vw, 82px) 0;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(64, 116, 255, 0.14), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  isolation: isolate;
 }
 
-function smoothStep(start, end, value) {
-  const progress = clamp01((value - start) / (end - start));
-  return progress * progress * (3 - 2 * progress);
+.about-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(38, 108, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(38, 108, 255, 0.025) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
 }
 
-function easeOutBack(value, overshoot = 1.7) {
-  const progress = clamp01(value);
-  const shifted = progress - 1;
-
-  return (
-    1 +
-    (overshoot + 1) * shifted * shifted * shifted +
-    overshoot * shifted * shifted
-  );
+.about-section__glow {
+  position: absolute;
+  z-index: -1;
+  border-radius: 999px;
+  filter: blur(55px);
+  pointer-events: none;
 }
 
-function easeInOutCubic(value) {
-  const progress = clamp01(value);
-
-  return progress < 0.5
-    ? 4 * progress * progress * progress
-    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+.about-section__glow--one {
+  width: 340px;
+  height: 340px;
+  top: 3%;
+  right: -9%;
+  background: rgba(44, 108, 255, 0.13);
 }
 
-function drawRoundedRect(context, x, y, width, height, radius) {
-  const safeRadius = Math.min(radius, width / 2, height / 2);
-
-  context.beginPath();
-  context.moveTo(x + safeRadius, y);
-  context.lineTo(x + width - safeRadius, y);
-  context.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
-  context.lineTo(x + width, y + height - safeRadius);
-  context.quadraticCurveTo(
-    x + width,
-    y + height,
-    x + width - safeRadius,
-    y + height,
-  );
-  context.lineTo(x + safeRadius, y + height);
-  context.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
-  context.lineTo(x, y + safeRadius);
-  context.quadraticCurveTo(x, y, x + safeRadius, y);
-  context.closePath();
+.about-section__glow--two {
+  width: 280px;
+  height: 280px;
+  left: -10%;
+  bottom: -12%;
+  background: rgba(91, 76, 255, 0.08);
 }
 
-function setOpacity(materials, opacity) {
-  materials.forEach((material) => {
-    material.transparent = true;
-    material.opacity = opacity;
-  });
+.about-section__container {
+  width: min(1420px, calc(100% - 44px));
+  margin-inline: auto;
 }
 
-function createGlowTexture() {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 512;
-
-  const context = canvas.getContext("2d");
-  const gradient = context.createRadialGradient(256, 256, 0, 256, 256, 256);
-
-  gradient.addColorStop(0, "rgba(68, 188, 255, 1)");
-  gradient.addColorStop(0.2, "rgba(20, 137, 255, 0.72)");
-  gradient.addColorStop(0.56, "rgba(20, 137, 255, 0.18)");
-  gradient.addColorStop(1, "rgba(20, 137, 255, 0)");
-
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, 512, 512);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.generateMipmaps = true;
-  texture.needsUpdate = true;
-
-  return texture;
+.about-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(440px, 1.1fr);
+  gap: clamp(28px, 4vw, 64px);
+  align-items: center;
 }
 
-function createLabelTexture(title, subtitle, accent, anisotropy) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 1200;
-  canvas.height = 360;
-
-  const context = canvas.getContext("2d");
-  context.clearRect(0, 0, canvas.width, canvas.height);
-
-  drawRoundedRect(context, 20, 20, 1160, 320, 70);
-  context.fillStyle = "rgba(255,255,255,0.98)";
-  context.fill();
-  context.strokeStyle = "rgba(15, 117, 225, 0.15)";
-  context.lineWidth = 4;
-  context.stroke();
-
-  context.beginPath();
-  context.arc(105, 180, 24, 0, Math.PI * 2);
-  context.fillStyle = accent;
-  context.fill();
-
-  context.fillStyle = "#071126";
-  context.font = "600 58px Poppins, Arial, sans-serif";
-  context.fillText(title, 165, 158);
-
-  context.fillStyle = "#64748b";
-  context.font = "400 34px Poppins, Arial, sans-serif";
-  context.fillText(subtitle, 165, 224);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = Math.min(anisotropy, 16);
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.generateMipmaps = true;
-  texture.needsUpdate = true;
-
-  return texture;
+.about-hero__content {
+  min-width: 0;
+  padding-block: 8px;
 }
 
-function createProductTexture(anisotropy) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 2048;
-  canvas.height = 1280;
+.about-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid rgba(29, 104, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(239, 245, 255, 0.94);
+  color: #0b1739;
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: 0 10px 24px rgba(25, 84, 177, 0.06);
+}
 
-  const context = canvas.getContext("2d");
-  const texture = new THREE.CanvasTexture(canvas);
+.about-eyebrow__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #176dff;
+  box-shadow: 0 0 14px rgba(23, 109, 255, 0.65);
+}
 
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = Math.min(anisotropy, 16);
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.generateMipmaps = true;
+.about-hero__title {
+  max-width: 670px;
+  margin: 24px 0 18px;
+  color: #081333;
+  font-size: clamp(2.5rem, 4vw, 4.65rem);
+  line-height: 1.01;
+  letter-spacing: -0.052em;
+  font-weight: 600;
+}
 
-  let lastFrame = -1;
+.about-hero__title span {
+  position: relative;
+  display: inline;
+  color: #176dff;
+}
 
-  function update(progress, time) {
-    const frame = Math.floor(time * 30) + Math.round(progress * 1000) * 1000;
+.about-hero__title span::after {
+  content: "";
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  bottom: -7px;
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #176dff, #77a7ff);
+  transform: rotate(-1deg);
+}
 
-    if (frame === lastFrame) return;
-    lastFrame = frame;
+.about-hero__description {
+  max-width: 630px;
+  margin: 0;
+  color: #4b5876;
+  font-size: clamp(0.98rem, 1.15vw, 1.12rem);
+  line-height: 1.72;
+}
 
-    context.clearRect(0, 0, canvas.width, canvas.height);
+.about-hero__line {
+  width: 62px;
+  height: 4px;
+  margin: 24px 0 26px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #176dff, #9db9ff);
+}
 
-    drawRoundedRect(context, 20, 20, 2008, 1240, 82);
-    context.fillStyle = "#ffffff";
-    context.fill();
-    context.strokeStyle = "rgba(15, 117, 225, 0.14)";
-    context.lineWidth = 5;
-    context.stroke();
+.about-highlights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
 
-    context.fillStyle = "#071126";
-    context.font = "600 62px Poppins, Arial, sans-serif";
-    context.fillText("Dalo", 105, 125);
+.about-highlight {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 11px;
+  align-items: start;
+  min-width: 0;
+}
 
-    context.fillStyle = "#168bff";
-    context.fillText("Tech", 265, 125);
+.about-highlight + .about-highlight {
+  padding-left: 16px;
+  border-left: 1px solid #dde6f6;
+}
 
-    context.fillStyle = "#64748b";
-    context.font = "500 30px Poppins, Arial, sans-serif";
-    context.fillText("PRODUCTO DIGITAL", 1500, 118);
+.about-highlight__icon,
+.about-card__icon,
+.about-value__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
 
-    context.strokeStyle = "#e2e8f0";
-    context.lineWidth = 3;
-    context.beginPath();
-    context.moveTo(78, 175);
-    context.lineTo(1970, 175);
-    context.stroke();
+.about-highlight__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  color: #176dff;
+  background: linear-gradient(145deg, #ffffff 0%, #edf4ff 100%);
+  border: 1px solid rgba(29, 104, 255, 0.12);
+  box-shadow: 0 10px 24px rgba(39, 87, 177, 0.08);
+}
 
-    drawRoundedRect(context, 72, 220, 410, 940, 48);
-    context.fillStyle = "#f7faff";
-    context.fill();
+.about-highlight h3 {
+  margin: 0 0 5px;
+  color: #0b1739;
+  font-size: 0.9rem;
+  line-height: 1.25;
+  font-weight: 600;
+}
 
-    const stages = ["Estrategia", "Diseño", "Desarrollo"];
+.about-highlight p {
+  margin: 0;
+  color: #63708d;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
 
-    stages.forEach((stage, index) => {
-      const y = 355 + index * 150;
-      const active = progress > 0.18 + index * 0.18;
+.about-hero__visual {
+  position: relative;
+  width: 100%;
+  min-height: 470px;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: visible;
+  transform: translateY(-52px);
+}
 
-      drawRoundedRect(context, 112, y - 72, 330, 105, 28);
-      context.fillStyle = active ? "#eaf4ff" : "#ffffff";
-      context.fill();
-
-      context.beginPath();
-      context.arc(162, y - 20, 15, 0, Math.PI * 2);
-      context.fillStyle = active ? "#168bff" : "#cbd5e1";
-      context.fill();
-
-      context.fillStyle = active ? "#0f172a" : "#94a3b8";
-      context.font = "500 38px Poppins, Arial, sans-serif";
-      context.fillText(stage, 208, y - 6);
-    });
-
-    context.fillStyle = "#0f172a";
-    context.font = "600 54px Poppins, Arial, sans-serif";
-    context.fillText("Una solución lista para crecer", 575, 320);
-
-    context.fillStyle = "#64748b";
-    context.font = "400 34px Poppins, Arial, sans-serif";
-    context.fillText(
-      "Estrategia, experiencia y tecnología trabajando como un solo producto.",
-      575,
-      380,
+.about-hero__visual::before {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  top: -15%;
+  right: -14%;
+  bottom: 7%;
+  left: 7%;
+  border-radius: 54% 0 0 48% / 48% 0 0 58%;
+  background:
+    radial-gradient(
+      circle at 68% 24%,
+      rgba(125, 162, 255, 0.42),
+      transparent 30%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(231, 240, 255, 0.98) 0%,
+      rgba(210, 225, 255, 0.95) 56%,
+      rgba(239, 245, 255, 0.98) 100%
     );
+  box-shadow: 0 28px 72px rgba(35, 78, 166, 0.09);
+}
 
-    const cards = [
-      { title: "Arquitectura", text: "Base segura y escalable" },
-      { title: "Experiencia", text: "Interfaz clara y funcional" },
-      { title: "Evolución", text: "Preparada para crecer" },
-    ];
+.about-hero__visual::after {
+  content: none;
+}
 
-    cards.forEach((card, index) => {
-      const x = 575 + index * 430;
+.about-hero__image {
+  position: absolute;
+  z-index: 1;
+  left: 53%;
+  bottom: 42px;
+  display: block;
+  width: 112%;
+  max-width: none;
+  height: auto;
+  max-height: 500px;
+  object-fit: contain;
+  object-position: center bottom;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 22px 30px rgba(20, 68, 157, 0.12));
+}
 
-      drawRoundedRect(context, x, 455, 370, 250, 44);
-      context.fillStyle = "#f5f9ff";
-      context.fill();
-      context.strokeStyle = "rgba(22, 139, 255, 0.12)";
-      context.lineWidth = 3;
-      context.stroke();
+.about-grid {
+  display: grid;
+  grid-template-columns: 1.04fr 0.96fr 0.96fr 1.14fr;
+  gap: 16px;
+  margin-top: 22px;
+}
 
-      context.beginPath();
-      context.arc(x + 64, 530, 19, 0, Math.PI * 2);
-      context.fillStyle = "#168bff";
-      context.fill();
+.about-card {
+  position: relative;
+  min-width: 0;
+  min-height: 360px;
+  overflow: hidden;
+  padding: 26px;
+  border: 1px solid rgba(62, 96, 164, 0.1);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 16px 42px rgba(49, 79, 139, 0.08);
+}
 
-      context.fillStyle = "#0f172a";
-      context.font = "600 37px Poppins, Arial, sans-serif";
-      context.fillText(card.title, x + 105, 544);
+.about-card--mission {
+  color: #ffffff;
+  background: linear-gradient(150deg, #09216d 0%, #0e43b9 68%, #176dff 100%);
+  border-color: rgba(255, 255, 255, 0.11);
+}
 
-      context.fillStyle = "#64748b";
-      context.font = "400 30px Poppins, Arial, sans-serif";
-      context.fillText(card.text, x + 42, 635);
-    });
+.about-card__icon {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  color: #176dff;
+  background: linear-gradient(145deg, #ffffff, #edf4ff);
+  border: 1px solid rgba(29, 104, 255, 0.12);
+  box-shadow: 0 10px 24px rgba(39, 87, 177, 0.08);
+}
 
-    drawRoundedRect(context, 575, 785, 1250, 250, 48);
-    context.fillStyle = "#f7faff";
-    context.fill();
+.about-card__icon--light {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
 
-    context.fillStyle = "#0f172a";
-    context.font = "600 37px Poppins, Arial, sans-serif";
-    context.fillText("Construcción del producto", 635, 865);
+.about-card__header h3 {
+  margin: 0;
+  color: #0a1738;
+  font-size: clamp(1.3rem, 1.5vw, 1.58rem);
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
 
-    drawRoundedRect(context, 635, 920, 1120, 30, 15);
-    context.fillStyle = "#dcecff";
-    context.fill();
+.about-card__header span {
+  display: block;
+  width: 34px;
+  height: 3px;
+  margin-top: 11px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #176dff, #91b0ff);
+}
 
-    const visibleProgress = Math.max(0.05, progress);
-    drawRoundedRect(context, 635, 920, 1120 * visibleProgress, 30, 15);
+.about-card__header--light h3 {
+  color: #ffffff;
+}
 
-    const gradient = context.createLinearGradient(635, 0, 1755, 0);
-    gradient.addColorStop(0, "#20b2ff");
-    gradient.addColorStop(1, "#174be8");
-    context.fillStyle = gradient;
-    context.fill();
+.about-card__header--light span {
+  background: linear-gradient(90deg, #58a9ff, #c0dcff);
+}
 
-    const pulse = 0.5 + Math.sin(time * 3.1) * 0.5;
-    context.globalAlpha = 0.25 + pulse * 0.25;
-    context.beginPath();
-    context.arc(1750, 935, 28 + pulse * 10, 0, Math.PI * 2);
-    context.fillStyle = "#168bff";
-    context.fill();
-    context.globalAlpha = 1;
+.about-card__body {
+  position: relative;
+  z-index: 2;
+  margin: 20px 0 0;
+  color: #35415f;
+  font-size: 0.91rem;
+  line-height: 1.66;
+}
 
-    texture.needsUpdate = true;
+.about-card__body--light {
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.about-card__body--strong {
+  color: #142346;
+  font-weight: 500;
+}
+
+.about-quote {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  margin: 0;
+  padding: 18px 18px 18px 42px;
+  border: 1px solid rgba(39, 95, 207, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 26px rgba(45, 79, 145, 0.07);
+}
+
+.about-quote__mark {
+  position: absolute;
+  left: 15px;
+  top: 9px;
+  color: #176dff;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.about-quote p {
+  margin: 0;
+  color: #0e2148;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  font-weight: 550;
+  font-style: italic;
+}
+
+.about-card__art {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: block;
+  width: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.about-card__art--mission {
+  height: 47%;
+  object-fit: cover;
+  object-position: center 58%;
+  opacity: 0.98;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.82) 18%,
+    #000 34%,
+    #000 100%
+  );
+}
+
+.about-card__art--vision {
+  height: 46%;
+  object-fit: cover;
+  object-position: center 63%;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.82) 20%,
+    #000 36%,
+    #000 100%
+  );
+}
+
+.about-values {
+  display: grid;
+  gap: 13px;
+  margin-top: 20px;
+}
+
+.about-value {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 11px;
+  align-items: start;
+}
+
+.about-value + .about-value {
+  padding-top: 13px;
+  border-top: 1px dashed #dfe7f5;
+}
+
+.about-value__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: #ffffff;
+  background: linear-gradient(145deg, #176dff, #0c4ac4);
+}
+
+.about-value h4 {
+  margin: 0 0 3px;
+  color: #0d1a3d;
+  font-size: 0.89rem;
+  line-height: 1.28;
+  font-weight: 600;
+}
+
+.about-value p {
+  margin: 0;
+  color: #606c87;
+  font-size: 0.77rem;
+  line-height: 1.48;
+}
+
+@media (max-width: 1180px) {
+  .about-hero {
+    grid-template-columns: 1fr 1fr;
   }
 
-  return { texture, update };
+  .about-hero__visual {
+    min-height: 430px;
+    transform: translateY(-34px);
+  }
+
+  .about-hero__visual::before {
+    top: -12%;
+    right: -12%;
+    bottom: 7%;
+    left: 5%;
+  }
+
+  .about-hero__image {
+    left: 52%;
+    bottom: 30px;
+    width: 110%;
+    max-height: 455px;
+  }
+
+  .about-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .about-card {
+    min-height: 350px;
+  }
 }
 
-/* =========================================================
-   ESCENA 3D: ATELIER DIGITAL
-========================================================= */
-
-function AboutMagicScene() {
-  const mountRef = useRef(null);
-
-  useEffect(() => {
-    const mount = mountRef.current;
-    if (!mount) return undefined;
-
-    const scene = new THREE.Scene();
-    const world = new THREE.Group();
-    scene.add(world);
-
-    const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
-    camera.position.set(0, 3.05, 10.2);
-    camera.lookAt(0, 2.05, 0);
-
-    const renderer = new THREE.WebGLRenderer({
-      alpha: true,
-      antialias: true,
-      powerPreference: "high-performance",
-    });
-
-    renderer.setClearColor(0xffffff, 0);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.domElement.className = "about-magic-canvas";
-    renderer.domElement.setAttribute("aria-hidden", "true");
-
-    mount.appendChild(renderer.domElement);
-
-    const reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
-
-    const environment = new RoomEnvironment();
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    const environmentMap = pmremGenerator.fromScene(environment, 0.035);
-    scene.environment = environmentMap.texture;
-
-    const whiteMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xf9fcff,
-      roughness: 0.16,
-      metalness: 0.05,
-      clearcoat: 1,
-      clearcoatRoughness: 0.07,
-    });
-
-    const whiteSoftMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xeaf2fb,
-      roughness: 0.24,
-      metalness: 0.04,
-      clearcoat: 0.86,
-      clearcoatRoughness: 0.14,
-    });
-
-    const blueMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x168bff,
-      roughness: 0.14,
-      metalness: 0.22,
-      clearcoat: 1,
-      clearcoatRoughness: 0.05,
-      emissive: 0x087bea,
-      emissiveIntensity: 0.16,
-    });
-
-    const skyMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x6bc5ff,
-      roughness: 0.18,
-      metalness: 0.1,
-      clearcoat: 1,
-      clearcoatRoughness: 0.06,
-      emissive: 0x168bff,
-      emissiveIntensity: 0.08,
-    });
-
-    const navyMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x174ee8,
-      roughness: 0.16,
-      metalness: 0.24,
-      clearcoat: 1,
-      clearcoatRoughness: 0.05,
-      emissive: 0x174ee8,
-      emissiveIntensity: 0.12,
-    });
-
-    const darkMaterial = new THREE.MeshStandardMaterial({
-      color: 0x0d1a2d,
-      roughness: 0.22,
-      metalness: 0.62,
-    });
-
-    const eyeWhiteMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      toneMapped: false,
-    });
-
-    const pupilMaterial = new THREE.MeshBasicMaterial({
-      color: 0x168bff,
-      toneMapped: false,
-    });
-
-    const glassMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x98d6ff,
-      transparent: true,
-      opacity: 0.2,
-      roughness: 0.04,
-      metalness: 0,
-      transmission: 0.18,
-      clearcoat: 1,
-      clearcoatRoughness: 0.03,
-      depthWrite: false,
-    });
-
-    const glowTexture = createGlowTexture();
-
-    /* =====================================================
-       ILUMINACIÓN
-    ===================================================== */
-
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xd7eaff, 2.25));
-
-    const keyLight = new THREE.DirectionalLight(0xffffff, 4.25);
-    keyLight.position.set(5.2, 8.8, 6.8);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.set(2048, 2048);
-    keyLight.shadow.camera.left = -7;
-    keyLight.shadow.camera.right = 7;
-    keyLight.shadow.camera.top = 7;
-    keyLight.shadow.camera.bottom = -5;
-    keyLight.shadow.bias = -0.00012;
-    scene.add(keyLight);
-
-    const fillLight = new THREE.PointLight(0xffffff, 13, 9, 2);
-    fillLight.position.set(3.5, 4.8, 4.5);
-    scene.add(fillLight);
-
-    const blueLight = new THREE.PointLight(0x168bff, 17, 8, 2);
-    blueLight.position.set(-3, 3.6, 3.2);
-    scene.add(blueLight);
-
-    /* =====================================================
-       PLATAFORMA
-    ===================================================== */
-
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(12, 8),
-      new THREE.ShadowMaterial({
-        color: 0x0f5c9f,
-        transparent: true,
-        opacity: 0.075,
-      }),
-    );
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.03;
-    floor.receiveShadow = true;
-    world.add(floor);
-
-    const platform = new THREE.Group();
-
-    const platformBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(2.65, 2.85, 0.18, 72),
-      whiteSoftMaterial,
-    );
-    platformBase.position.y = 0.08;
-    platformBase.castShadow = true;
-    platformBase.receiveShadow = true;
-    platform.add(platformBase);
-
-    const platformTop = new THREE.Mesh(
-      new THREE.CylinderGeometry(2.4, 2.58, 0.11, 72),
-      whiteMaterial,
-    );
-    platformTop.position.y = 0.2;
-    platformTop.castShadow = true;
-    platformTop.receiveShadow = true;
-    platform.add(platformTop);
-
-    const platformRing = new THREE.Mesh(
-      new THREE.TorusGeometry(2.14, 0.04, 14, 96),
-      blueMaterial,
-    );
-    platformRing.rotation.x = Math.PI / 2;
-    platformRing.position.y = 0.275;
-    platform.add(platformRing);
-
-    world.add(platform);
-
-    /* =====================================================
-       CRISTAL CENTRAL
-    ===================================================== */
-
-    const crystal = new THREE.Group();
-    crystal.position.set(0, 1.35, 0.45);
-
-    const crystalMesh = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(0.36, 3),
-      new THREE.MeshPhysicalMaterial({
-        color: 0x168bff,
-        roughness: 0.08,
-        metalness: 0.14,
-        clearcoat: 1,
-        clearcoatRoughness: 0.03,
-        emissive: 0x087bea,
-        emissiveIntensity: 0.5,
-      }),
-    );
-    crystalMesh.castShadow = true;
-    crystal.add(crystalMesh);
-
-    const crystalGlow = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: glowTexture,
-        color: 0x168bff,
-        transparent: true,
-        opacity: 0.58,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      }),
-    );
-    crystalGlow.scale.set(1.8, 1.8, 1);
-    crystal.add(crystalGlow);
-
-    const ringOne = new THREE.Mesh(
-      new THREE.TorusGeometry(0.58, 0.012, 8, 72),
-      new THREE.MeshBasicMaterial({
-        color: 0x168bff,
-        transparent: true,
-        opacity: 0.4,
-        depthWrite: false,
-      }),
-    );
-    ringOne.rotation.x = 1.05;
-    crystal.add(ringOne);
-
-    const ringTwo = ringOne.clone();
-    ringTwo.rotation.set(0.45, 0.9, -0.35);
-    crystal.add(ringTwo);
-
-    world.add(crystal);
-
-    /* =====================================================
-       AYUDANTES ANIMADOS
-    ===================================================== */
-
-    function enableShadows(object) {
-      object.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-    }
-
-    function createArm(side, material) {
-      const pivot = new THREE.Group();
-      pivot.position.set(side * 0.35, -0.02, 0);
-
-      const upper = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.055, 0.18, 6, 14),
-        material,
-      );
-      upper.position.y = -0.16;
-      upper.rotation.z = side * -0.12;
-      pivot.add(upper);
-
-      const hand = new THREE.Mesh(
-        new THREE.SphereGeometry(0.07, 18, 14),
-        whiteMaterial,
-      );
-      hand.position.set(side * 0.035, -0.36, 0.02);
-      pivot.add(hand);
-
-      return { pivot, hand };
-    }
-
-    function createHelper({ title, subtitle, accentMaterial, accentHex, index }) {
-      const root = new THREE.Group();
-      const body = new THREE.Group();
-      root.add(body);
-
-      const torso = new THREE.Mesh(
-        new THREE.SphereGeometry(0.34, 40, 32),
-        whiteMaterial,
-      );
-      torso.scale.set(1, 1.08, 0.92);
-      body.add(torso);
-
-      const belly = new THREE.Mesh(
-        new RoundedBoxGeometry(0.42, 0.22, 0.07, 5, 0.05),
-        accentMaterial,
-      );
-      belly.position.set(0, -0.05, 0.31);
-      body.add(belly);
-
-      const face = new THREE.Mesh(
-        new RoundedBoxGeometry(0.48, 0.2, 0.08, 5, 0.06),
-        darkMaterial,
-      );
-      face.position.set(0, 0.13, 0.31);
-      body.add(face);
-
-      const eyeLeft = new THREE.Mesh(
-        new THREE.SphereGeometry(0.055, 20, 16),
-        eyeWhiteMaterial,
-      );
-      const eyeRight = eyeLeft.clone();
-      eyeLeft.position.set(-0.105, 0.14, 0.365);
-      eyeRight.position.set(0.105, 0.14, 0.365);
-      body.add(eyeLeft, eyeRight);
-
-      const pupilLeft = new THREE.Mesh(
-        new THREE.SphereGeometry(0.024, 18, 14),
-        pupilMaterial,
-      );
-      const pupilRight = pupilLeft.clone();
-      pupilLeft.position.set(-0.105, 0.14, 0.412);
-      pupilRight.position.set(0.105, 0.14, 0.412);
-      body.add(pupilLeft, pupilRight);
-
-      const antenna = new THREE.Group();
-      const stem = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.018, 0.024, 0.18, 16),
-        accentMaterial,
-      );
-      stem.position.y = 0.46;
-      antenna.add(stem);
-
-      const antennaTip = new THREE.Mesh(
-        new THREE.SphereGeometry(0.055, 18, 14),
-        accentMaterial,
-      );
-      antennaTip.position.y = 0.58;
-      antenna.add(antennaTip);
-      body.add(antenna);
-
-      const leftArm = createArm(-1, accentMaterial);
-      const rightArm = createArm(1, accentMaterial);
-      body.add(leftArm.pivot, rightArm.pivot);
-
-      const leftFoot = new THREE.Mesh(
-        new RoundedBoxGeometry(0.18, 0.1, 0.28, 4, 0.05),
-        whiteSoftMaterial,
-      );
-      const rightFoot = leftFoot.clone();
-      leftFoot.position.set(-0.16, -0.39, 0.06);
-      rightFoot.position.set(0.16, -0.39, 0.06);
-      body.add(leftFoot, rightFoot);
-
-      const labelTexture = createLabelTexture(
-        title,
-        subtitle,
-        accentHex,
-        maxAnisotropy,
-      );
-
-      const labelMaterial = new THREE.MeshBasicMaterial({
-        map: labelTexture,
-        transparent: true,
-        opacity: 0,
-        toneMapped: false,
-        depthWrite: false,
-      });
-
-      const label = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.7, 0.52),
-        labelMaterial,
-      );
-      label.position.set(0, 0.95, -0.08);
-      root.add(label);
-
-      const glow = new THREE.Sprite(
-        new THREE.SpriteMaterial({
-          map: glowTexture,
-          color: new THREE.Color(accentHex),
-          transparent: true,
-          opacity: 0.12,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
-        }),
-      );
-      glow.scale.set(1.25, 1.25, 1);
-      glow.position.z = -0.2;
-      body.add(glow);
-
-      root.userData = {
-        index,
-        body,
-        torso,
-        belly,
-        face,
-        eyeLeft,
-        eyeRight,
-        pupilLeft,
-        pupilRight,
-        antenna,
-        antennaTip,
-        leftArm,
-        rightArm,
-        leftFoot,
-        rightFoot,
-        labelMaterial,
-        materials: [labelMaterial],
-        blinkOffset: index * 1.9,
-      };
-
-      enableShadows(root);
-      world.add(root);
-      return root;
-    }
-
-    const helpers = [
-      createHelper({
-        title: "Estrategia",
-        subtitle: "Entender antes de construir",
-        accentMaterial: skyMaterial,
-        accentHex: "#5abaff",
-        index: 0,
-      }),
-      createHelper({
-        title: "Diseño",
-        subtitle: "Experiencias claras y humanas",
-        accentMaterial: blueMaterial,
-        accentHex: "#168bff",
-        index: 1,
-      }),
-      createHelper({
-        title: "Desarrollo",
-        subtitle: "Tecnología preparada para crecer",
-        accentMaterial: navyMaterial,
-        accentHex: "#174ee8",
-        index: 2,
-      }),
-    ];
-
-    const helperTargets = [
-      new THREE.Vector3(-2.45, 2.75, 0.15),
-      new THREE.Vector3(2.45, 2.6, 0.1),
-      new THREE.Vector3(0.35, 4.05, -0.1),
-    ];
-
-    const helperStarts = [
-      new THREE.Vector3(-5.2, 1.9, -0.8),
-      new THREE.Vector3(5.2, 2.1, -0.7),
-      new THREE.Vector3(0.2, 6.2, -1.4),
-    ];
-
-    helpers.forEach((helper, index) => {
-      helper.position.copy(helperStarts[index]);
-      helper.scale.setScalar(0.001);
-    });
-
-    /* =====================================================
-       CUBOS DE INFORMACIÓN Y TRAYECTORIAS
-    ===================================================== */
-
-    const routeTarget = new THREE.Vector3(0, 1.55, 0.48);
-    const routes = [];
-
-    function createRoute(start, control, index, material) {
-      const curve = new THREE.QuadraticBezierCurve3(
-        start.clone(),
-        control.clone(),
-        routeTarget.clone(),
-      );
-
-      const tubeMaterial = new THREE.MeshBasicMaterial({
-        color: material.color,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-      });
-
-      const tube = new THREE.Mesh(
-        new THREE.TubeGeometry(curve, 64, 0.009, 6, false),
-        tubeMaterial,
-      );
-      world.add(tube);
-
-      const particles = [];
-
-      for (let particleIndex = 0; particleIndex < 9; particleIndex += 1) {
-        const particle = new THREE.Mesh(
-          new RoundedBoxGeometry(0.075, 0.075, 0.075, 3, 0.016),
-          particleIndex % 2 === 0 ? material : glassMaterial,
-        );
-        particle.visible = false;
-        world.add(particle);
-
-        particles.push({
-          mesh: particle,
-          delay: particleIndex * 0.13 + index * 0.18,
-        });
-      }
-
-      routes.push({ curve, tubeMaterial, particles });
-    }
-
-    createRoute(
-      helperTargets[0],
-      new THREE.Vector3(-1.4, 2.4, 1.15),
-      0,
-      skyMaterial,
-    );
-    createRoute(
-      helperTargets[1],
-      new THREE.Vector3(1.45, 2.35, 1.08),
-      1,
-      blueMaterial,
-    );
-    createRoute(
-      helperTargets[2],
-      new THREE.Vector3(0.2, 2.9, 0.6),
-      2,
-      navyMaterial,
-    );
-
-    /* =====================================================
-       PRODUCTO FINAL
-    ===================================================== */
-
-    const product = new THREE.Group();
-    product.position.set(0, 1.88, 0.38);
-    world.add(product);
-
-    const productParts = [];
-
-    function addProductPart({ geometry, material, start, target, index }) {
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.copy(start);
-      mesh.userData = { start, target, index };
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      product.add(mesh);
-      productParts.push(mesh);
-      return mesh;
-    }
-
-    const standMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xe9f2fb,
-      roughness: 0.2,
-      metalness: 0.08,
-      clearcoat: 0.85,
-      transparent: true,
-      opacity: 0,
-    });
-
-    addProductPart({
-      geometry: new RoundedBoxGeometry(1.25, 0.11, 0.72, 5, 0.055),
-      material: standMaterial,
-      start: new THREE.Vector3(0, -2.15, -0.12),
-      target: new THREE.Vector3(0, -1.45, -0.12),
-      index: 0,
-    });
-
-    addProductPart({
-      geometry: new THREE.CylinderGeometry(0.075, 0.11, 0.78, 24),
-      material: standMaterial.clone(),
-      start: new THREE.Vector3(0, -2.05, -0.1),
-      target: new THREE.Vector3(0, -1.1, -0.1),
-      index: 1,
-    });
-
-    addProductPart({
-      geometry: new RoundedBoxGeometry(3.55, 2.12, 0.2, 7, 0.17),
-      material: new THREE.MeshPhysicalMaterial({
-        color: 0xe7f1fb,
-        roughness: 0.18,
-        metalness: 0.06,
-        clearcoat: 0.95,
-        transparent: true,
-        opacity: 0,
-      }),
-      start: new THREE.Vector3(0, -1.3, -1.2),
-      target: new THREE.Vector3(0, 0, -0.17),
-      index: 2,
-    });
-
-    addProductPart({
-      geometry: new RoundedBoxGeometry(3.42, 2.0, 0.11, 7, 0.16),
-      material: new THREE.MeshPhysicalMaterial({
-        color: 0xffffff,
-        roughness: 0.14,
-        metalness: 0.02,
-        clearcoat: 1,
-        clearcoatRoughness: 0.07,
-        transparent: true,
-        opacity: 0,
-      }),
-      start: new THREE.Vector3(0.75, -0.65, -0.75),
-      target: new THREE.Vector3(0, 0, -0.04),
-      index: 3,
-    });
-
-    const liveProduct = createProductTexture(maxAnisotropy);
-    const screenMaterial = new THREE.MeshBasicMaterial({
-      map: liveProduct.texture,
-      transparent: true,
-      opacity: 0,
-      toneMapped: false,
-    });
-
-    addProductPart({
-      geometry: new THREE.PlaneGeometry(3.18, 1.82),
-      material: screenMaterial,
-      start: new THREE.Vector3(-0.7, 0.55, 0.85),
-      target: new THREE.Vector3(0, 0, 0.025),
-      index: 4,
-    });
-
-    const productGlow = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: glowTexture,
-        color: 0x168bff,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      }),
-    );
-    productGlow.scale.set(5.2, 3.15, 1);
-    productGlow.position.z = -0.55;
-    product.add(productGlow);
-
-    /* =====================================================
-       DESTELLOS
-    ===================================================== */
-
-    const sparkles = [];
-
-    for (let index = 0; index < 24; index += 1) {
-      const sparkle = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.035 + (index % 3) * 0.012, 0),
-        index % 3 === 0 ? skyMaterial : index % 3 === 1 ? blueMaterial : navyMaterial,
-      );
-
-      const angle = (index / 24) * Math.PI * 2;
-      const radius = 2 + (index % 4) * 0.35;
-
-      sparkle.position.set(
-        Math.cos(angle) * radius,
-        2.15 + Math.sin(angle * 1.7) * 1.4,
-        -0.2 + (index % 2) * 0.45,
-      );
-
-      sparkle.userData = {
-        base: sparkle.position.clone(),
-        phase: index * 0.63,
-      };
-
-      world.add(sparkle);
-      sparkles.push(sparkle);
-    }
-
-    /* =====================================================
-       INTERACCIÓN
-    ===================================================== */
-
-    const pointer = { x: 0, y: 0 };
-    const targetPointer = { x: 0, y: 0 };
-
-    function handlePointerMove(event) {
-      const bounds = mount.getBoundingClientRect();
-      targetPointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-      targetPointer.y = -(((event.clientY - bounds.top) / bounds.height) * 2 - 1);
-    }
-
-    function handlePointerLeave() {
-      targetPointer.x = 0;
-      targetPointer.y = 0;
-    }
-
-    mount.addEventListener("pointermove", handlePointerMove);
-    mount.addEventListener("pointerleave", handlePointerLeave);
-
-    function resizeScene() {
-      const width = mount.clientWidth || 700;
-      const height = mount.clientHeight || 400;
-
-      camera.aspect = width / height;
-
-      if (width < 520) {
-        camera.fov = 42;
-        camera.position.z = 12.2;
-      } else if (width < 900) {
-        camera.fov = 37;
-        camera.position.z = 10.9;
-      } else {
-        camera.fov = 34;
-        camera.position.z = 10.2;
-      }
-
-      camera.updateProjectionMatrix();
-
-      renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio || 1, width < 700 ? 1.75 : 2.25),
-      );
-      renderer.setSize(width, height, false);
-    }
-
-    const resizeObserver = new ResizeObserver(resizeScene);
-    resizeObserver.observe(mount);
-    resizeScene();
-
-    /* =====================================================
-       ANIMACIÓN PRINCIPAL
-    ===================================================== */
-
-    const clock = new THREE.Clock();
-    const duration = 19;
-
-    function animate() {
-      const elapsed = clock.getElapsedTime();
-      const timeline = reducedMotion ? 15 : elapsed % duration;
-      const motion = reducedMotion ? 0 : 1;
-
-      pointer.x += (targetPointer.x - pointer.x) * 0.04;
-      pointer.y += (targetPointer.y - pointer.y) * 0.04;
-
-      world.rotation.y = pointer.x * 0.035 * motion;
-      world.rotation.x = pointer.y * 0.012 * motion;
-
-      camera.position.x += (pointer.x * 0.12 * motion - camera.position.x) * 0.025;
-      camera.position.y += (3.05 + pointer.y * 0.06 * motion - camera.position.y) * 0.025;
-      camera.lookAt(0, 2.05, 0);
-
-      const fade = 1 - smoothStep(17.8, 19, timeline);
-      const crystalProgress = smoothStep(0, 1.3, timeline);
-      const helperProgress = smoothStep(0.9, 3.4, timeline);
-      const transferProgress = smoothStep(4.2, 10.2, timeline);
-      const productProgress = smoothStep(7.6, 12.8, timeline);
-      const celebrationProgress = smoothStep(12.2, 14.4, timeline);
-
-      const crystalScale = crystalProgress * (1 - productProgress * 0.72) * fade;
-      crystal.scale.setScalar(
-        Math.max(
-          0.001,
-          crystalScale * (1 + Math.sin(elapsed * 2.6) * 0.035 * motion),
-        ),
-      );
-      crystal.position.y = 1.35 + Math.sin(elapsed * 1.5) * 0.035 * motion;
-      crystalMesh.rotation.x += 0.006 * motion;
-      crystalMesh.rotation.y += 0.009 * motion;
-      ringOne.rotation.z += 0.008 * motion;
-      ringTwo.rotation.y -= 0.006 * motion;
-
-      helpers.forEach((helper, index) => {
-        const appear = easeOutBack(
-          smoothStep(0.8 + index * 0.25, 2.3 + index * 0.25, timeline),
-          1.45,
-        );
-
-        const target = helperTargets[index];
-        const start = helperStarts[index];
-        const eased = easeInOutCubic(helperProgress);
-
-        helper.position.lerpVectors(start, target, eased);
-
-        const baseFloat = Math.sin(elapsed * 1.45 + index * 1.3) * 0.075 * motion;
-        const sideFloat = Math.cos(elapsed * 1.1 + index) * 0.035 * motion;
-
-        helper.position.y += baseFloat;
-        helper.position.x += sideFloat;
-
-        const squash = 1 + Math.sin(elapsed * 2.6 + index) * 0.018 * motion;
-        const popScale = Math.max(0.001, appear * fade);
-        helper.scale.set(popScale * squash, popScale / squash, popScale);
-
-        const body = helper.userData.body;
-        body.rotation.z = Math.sin(elapsed * 1.3 + index) * 0.045 * motion;
-        body.rotation.y = pointer.x * 0.08 * motion;
-
-        const lookX = pointer.x * 0.018 * motion;
-        const lookY = pointer.y * 0.012 * motion;
-        helper.userData.pupilLeft.position.x = -0.105 + lookX;
-        helper.userData.pupilRight.position.x = 0.105 + lookX;
-        helper.userData.pupilLeft.position.y = 0.14 + lookY;
-        helper.userData.pupilRight.position.y = 0.14 + lookY;
-
-        const blinkCycle = (elapsed + helper.userData.blinkOffset) % 4.6;
-        const blink = blinkCycle > 4.38 ? 0.12 : 1;
-        helper.userData.eyeLeft.scale.y = blink;
-        helper.userData.eyeRight.scale.y = blink;
-        helper.userData.pupilLeft.scale.y = blink;
-        helper.userData.pupilRight.scale.y = blink;
-
-        const anticipation = smoothStep(3.7, 4.5, timeline);
-        const workWave = Math.sin(elapsed * 4.2 + index * 1.1) * 0.12 * motion;
-        helper.userData.leftArm.pivot.rotation.z = -0.45 - workWave * anticipation;
-        helper.userData.rightArm.pivot.rotation.z = 0.45 + workWave * anticipation;
-
-        const celebrate = celebrationProgress * fade;
-        helper.userData.leftArm.pivot.rotation.z -= celebrate * 0.8;
-        helper.userData.rightArm.pivot.rotation.z += celebrate * 0.8;
-        helper.userData.leftFoot.rotation.x = Math.sin(elapsed * 5 + index) * 0.08 * celebrate;
-        helper.userData.rightFoot.rotation.x = -Math.sin(elapsed * 5 + index) * 0.08 * celebrate;
-
-        helper.userData.antennaTip.scale.setScalar(
-          1 + (Math.sin(elapsed * 3.2 + index) + 1) * 0.08 * motion,
-        );
-
-        helper.userData.labelMaterial.opacity = helperProgress * fade;
-      });
-
-      const pathOpacity =
-        smoothStep(4, 4.9, timeline) *
-        (1 - smoothStep(10.4, 11.5, timeline)) *
-        fade;
-
-      routes.forEach((route, routeIndex) => {
-        route.tubeMaterial.opacity = pathOpacity * 0.2;
-
-        route.particles.forEach((particle) => {
-          const local = clamp01((timeline - 4.25 - particle.delay) / 2.9);
-          const active = local > 0 && local < 1 && pathOpacity > 0.01;
-          particle.mesh.visible = active;
-
-          if (!active) return;
-
-          const position = route.curve.getPoint(easeInOutCubic(local));
-          particle.mesh.position.copy(position);
-          particle.mesh.rotation.x += 0.06 * motion;
-          particle.mesh.rotation.y += 0.08 * motion;
-          particle.mesh.scale.setScalar(
-            Math.sin(local * Math.PI) * (0.75 + routeIndex * 0.08),
-          );
-        });
-      });
-
-      productParts.forEach((part) => {
-        const delay = part.userData.index * 0.1;
-        const partProgress = smoothStep(delay, 0.74 + delay, productProgress);
-
-        part.position.lerpVectors(
-          part.userData.start,
-          part.userData.target,
-          easeOutBack(partProgress, 0.8),
-        );
-        part.scale.setScalar(0.84 + partProgress * 0.16);
-        part.material.opacity = partProgress * fade;
-      });
-
-      product.position.y =
-        1.88 + Math.sin(elapsed * 1.2) * 0.025 * productProgress * motion;
-      product.rotation.y = -0.045 + pointer.x * 0.035 * productProgress * motion;
-      product.rotation.x = pointer.y * 0.012 * productProgress * motion;
-      productGlow.material.opacity = productProgress * fade * 0.14;
-
-      liveProduct.update(productProgress, elapsed);
-
-      sparkles.forEach((sparkle, index) => {
-        const reveal = smoothStep(9.5 + (index % 5) * 0.08, 11.6, timeline);
-        const sparkleFade = reveal * fade;
-        sparkle.visible = sparkleFade > 0.01;
-
-        sparkle.position.y =
-          sparkle.userData.base.y +
-          Math.sin(elapsed * 1.5 + sparkle.userData.phase) * 0.1 * motion;
-        sparkle.rotation.x += 0.01 * motion;
-        sparkle.rotation.y += 0.014 * motion;
-        sparkle.scale.setScalar(
-          sparkleFade * (0.7 + (Math.sin(elapsed * 3 + index) + 1) * 0.18),
-        );
-      });
-
-      blueMaterial.emissiveIntensity = 0.14 + Math.sin(elapsed * 2.3) * 0.025 * motion;
-      platformRing.rotation.z += 0.0024 * motion;
-
-      renderer.render(scene, camera);
-    }
-
-    renderer.setAnimationLoop(animate);
-
-    requestAnimationFrame(() => {
-      mount.classList.add("is-ready");
-    });
-
-    const visibilityObserver = new IntersectionObserver(
-      ([entry]) => {
-        renderer.setAnimationLoop(entry.isIntersecting ? animate : null);
-        if (entry.isIntersecting) clock.start();
-      },
-      { threshold: 0.05 },
-    );
-
-    visibilityObserver.observe(mount);
-
-    return () => {
-      renderer.setAnimationLoop(null);
-      visibilityObserver.disconnect();
-      resizeObserver.disconnect();
-
-      mount.removeEventListener("pointermove", handlePointerMove);
-      mount.removeEventListener("pointerleave", handlePointerLeave);
-
-      scene.traverse((object) => {
-        if (object.geometry) object.geometry.dispose();
-
-        if (object.material) {
-          const materials = Array.isArray(object.material)
-            ? object.material
-            : [object.material];
-
-          materials.forEach((material) => {
-            if (material.map) material.map.dispose();
-            material.dispose();
-          });
-        }
-      });
-
-      environmentMap.dispose();
-      environment.dispose?.();
-      pmremGenerator.dispose();
-      glowTexture.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
-
-      if (renderer.domElement.parentNode === mount) {
-        mount.removeChild(renderer.domElement);
-      }
-
-      mount.classList.remove("is-ready");
-    };
-  }, []);
-
-  return (
-    <div
-      ref={mountRef}
-      className="about-magic-stage"
-      role="img"
-      aria-label="Atelier digital animado donde estrategia, diseño y desarrollo construyen una solución tecnológica"
-    >
-      <div className="about-magic-loader">
-        <span />
-        <span />
-        <span />
-      </div>
-
-      <div className="about-magic-caption">
-        <span className="about-magic-caption__dot" />
-        <span>Una idea</span>
-        <span className="about-magic-caption__arrow">→</span>
-        <span>Estrategia</span>
-        <span className="about-magic-caption__arrow">→</span>
-        <span>Diseño</span>
-        <span className="about-magic-caption__arrow">→</span>
-        <span>Desarrollo</span>
-      </div>
-    </div>
-  );
+@media (max-width: 900px) {
+  .about-section__container {
+    width: min(100% - 28px, 760px);
+  }
+
+  .about-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .about-hero__content {
+    text-align: center;
+  }
+
+  .about-eyebrow,
+  .about-hero__title,
+  .about-hero__description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .about-hero__line {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .about-highlights {
+    text-align: left;
+  }
+
+  .about-hero__visual {
+    min-height: 390px;
+    transform: translateY(-18px);
+  }
+
+  .about-hero__visual::before {
+    top: -8%;
+    right: -7%;
+    bottom: 7%;
+    left: -1%;
+    border-radius: 44% 56% 48% 52% / 44% 42% 58% 56%;
+  }
+
+  .about-hero__image {
+    left: 50%;
+    bottom: 24px;
+    width: 108%;
+    max-height: 405px;
+  }
 }
 
-/* =========================================================
-   ABOUT
-========================================================= */
+@media (max-width: 660px) {
+  .about-section {
+    padding-block: 48px;
+  }
+
+  .about-hero__title {
+    margin-top: 20px;
+    font-size: clamp(2.2rem, 11vw, 3.25rem);
+  }
+
+  .about-highlights {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .about-highlight + .about-highlight {
+    padding-left: 0;
+    padding-top: 15px;
+    border-left: 0;
+    border-top: 1px solid #dce5f6;
+  }
+
+  .about-hero__visual {
+    min-height: 300px;
+    transform: translateY(-4px);
+    margin-top: -4px;
+  }
+
+  .about-hero__visual::before {
+    top: 0;
+    right: -8%;
+    bottom: 5%;
+    left: -7%;
+    border-radius: 45% 55% 48% 52% / 44% 43% 57% 56%;
+  }
+
+  .about-hero__visual::after {
+    display: none;
+  }
+
+  .about-hero__image {
+    left: 50%;
+    bottom: 10px;
+    width: 114%;
+    max-height: 315px;
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-card {
+    min-height: 340px;
+    padding: 22px;
+    border-radius: 20px;
+  }
+
+  .about-card--mission,
+  .about-card--vision {
+    min-height: 475px;
+    padding-bottom: 218px;
+  }
+
+  .about-card--mission .about-card__body,
+  .about-card--vision .about-card__body {
+    max-width: none;
+  }
+
+  .about-card__art--mission,
+  .about-card__art--vision {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 220px;
+    max-height: none;
+    object-fit: cover;
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.86) 16%,
+      #000 32%,
+      #000 100%
+    );
+  }
+
+  .about-card__art--mission {
+    object-position: center 62%;
+  }
+
+  .about-card__art--vision {
+    object-position: center 68%;
+  }
+
+  .about-card--values {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .about-section__container {
+    width: min(100% - 18px, 760px);
+  }
+
+  .about-hero__visual {
+    min-height: 245px;
+  }
+
+  .about-hero__visual::before {
+    top: 1%;
+    right: -10%;
+    bottom: 8%;
+    left: -10%;
+  }
+
+  .about-hero__image {
+    bottom: 8px;
+    width: 116%;
+    max-height: 260px;
+  }
+
+  .about-card {
+    min-height: 330px;
+  }
+
+  .about-card--mission,
+  .about-card--vision {
+    min-height: 450px;
+    padding-bottom: 205px;
+  }
+
+  .about-card__art--mission,
+  .about-card__art--vision {
+    height: 205px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .about-hero__image {
+    animation: aboutFloat 6s ease-in-out infinite;
+  }
+
+  .about-card,
+  .about-highlight {
+    transition:
+      transform 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  .about-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 22px 52px rgba(45, 77, 136, 0.13);
+  }
+
+  .about-highlight:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes aboutFloat {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(-4px);
+  }
+}
+`;
+
+const highlights = [
+  {
+    icon: Bolt,
+    title: "A la medida",
+    text: "Soluciones únicas para cada cliente y cada necesidad.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Tecnología de calidad",
+    text: "Aplicamos tecnologías modernas y buenas prácticas.",
+  },
+  {
+    icon: UsersRound,
+    title: "Comprometidos contigo",
+    text: "Te acompañamos de forma cercana durante todo el proyecto.",
+  },
+];
+
+const values = [
+  {
+    icon: Lightbulb,
+    title: "Innovación constante",
+    text: "Exploramos mejores formas de resolver cada reto.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Calidad en cada detalle",
+    text: "Cuidamos cada línea de código y cada experiencia.",
+  },
+  {
+    icon: Handshake,
+    title: "Confianza y transparencia",
+    text: "Construimos relaciones basadas en honestidad y resultados.",
+  },
+  {
+    icon: UsersRound,
+    title: "Trabajo en equipo",
+    text: "Colaboramos contigo para convertir tus objetivos en producto.",
+  },
+];
 
 export default function About() {
   return (
-    <section id="nosotros" className="section-shell about-premium">
-      <div className="about-premium__container">
-        <div className="about-premium__top">
-          <div className="about-premium__copy">
-            <p className="eyebrow">Quiénes somos</p>
+    <>
+      <style>{ABOUT_STYLES}</style>
 
-            <h2 className="about-premium__title">
-              Tecnología útil, diseño claro y{" "}
-              <span>soluciones que sí generan valor.</span>
-            </h2>
+      <section id="nosotros" className="about-section">
+        <div className="about-section__glow about-section__glow--one" />
+        <div className="about-section__glow about-section__glow--two" />
 
-            <div className="about-premium__description">
-              <p>
-                En DaloTech acompañamos a empresas, emprendimientos e instituciones a
-                optimizar sus procesos, mejorar la experiencia de sus clientes y
-                fortalecer su tecnología para competir mejor.
+        <div className="about-section__container">
+          <div className="about-hero">
+            <div className="about-hero__content">
+              <div className="about-eyebrow">
+                <span className="about-eyebrow__dot" />
+                Sobre nosotros
+              </div>
+
+              <h2 className="about-hero__title">
+                Transformamos ideas en <span>soluciones reales.</span>
+              </h2>
+
+              <p className="about-hero__description">
+                En DaloTech desarrollamos software a la medida que impulsa
+                negocios, optimiza procesos y crea experiencias digitales
+                excepcionales.
               </p>
 
-              <p>
-                Combinamos estrategia, diseño y desarrollo para crear productos digitales
-                seguros, escalables y preparados para crecer contigo.
-              </p>
+              <div className="about-hero__line" />
+
+              <div className="about-highlights">
+                {highlights.map(({ icon: Icon, title, text }) => (
+                  <article key={title} className="about-highlight">
+                    <div className="about-highlight__icon">
+                      <Icon size={20} strokeWidth={1.9} aria-hidden="true" />
+                    </div>
+
+                    <div>
+                      <h3>{title}</h3>
+                      <p>{text}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="about-hero__visual">
+              <img
+                src="/about-equipo.png"
+                alt="Equipo de DaloTech desarrollando software a la medida"
+                className="about-hero__image"
+                loading="lazy"
+                decoding="async"
+              />
             </div>
           </div>
 
-          <div className="about-premium__visual">
-            <AboutMagicScene />
+          <div className="about-grid">
+            <article className="about-card about-card--essence">
+              <div className="about-card__header">
+                <h3>Nuestra esencia</h3>
+                <span />
+              </div>
+
+              <p className="about-card__body">
+                Somos un equipo apasionado por el desarrollo de software a la
+                medida. Combinamos creatividad, tecnología y estrategia para
+                construir productos digitales que realmente generan valor.
+              </p>
+
+              <blockquote className="about-quote">
+                <span className="about-quote__mark">“</span>
+
+                <p>
+                  No solo escribimos código, creamos soluciones que impulsan el
+                  crecimiento de tu negocio.
+                </p>
+              </blockquote>
+            </article>
+
+            <article className="about-card about-card--mission">
+              <div className="about-card__icon about-card__icon--light">
+                <Target size={25} strokeWidth={1.8} aria-hidden="true" />
+              </div>
+
+              <div className="about-card__header about-card__header--light">
+                <h3>Misión</h3>
+                <span />
+              </div>
+
+              <p className="about-card__body about-card__body--light">
+                Desarrollar soluciones de software personalizadas que superen
+                las expectativas de nuestros clientes, optimizando procesos y
+                generando impacto real en sus negocios.
+              </p>
+
+              <img
+                src="/about-mision.png"
+                alt=""
+                className="about-card__art about-card__art--mission"
+                loading="lazy"
+                decoding="async"
+                aria-hidden="true"
+              />
+            </article>
+
+            <article className="about-card about-card--vision">
+              <div className="about-card__icon">
+                <Eye size={26} strokeWidth={1.8} aria-hidden="true" />
+              </div>
+
+              <div className="about-card__header">
+                <h3>Visión</h3>
+                <span />
+              </div>
+
+              <p className="about-card__body about-card__body--strong">
+                Ser referentes en desarrollo de software a la medida,
+                reconocidos por nuestra innovación, calidad y compromiso con
+                cada cliente.
+              </p>
+
+              <img
+                src="/about-vision.png"
+                alt=""
+                className="about-card__art about-card__art--vision"
+                loading="lazy"
+                decoding="async"
+                aria-hidden="true"
+              />
+            </article>
+
+            <article className="about-card about-card--values">
+              <div className="about-card__header">
+                <h3>Nuestros valores</h3>
+                <span />
+              </div>
+
+              <div className="about-values">
+                {values.map(({ icon: Icon, title, text }) => (
+                  <div key={title} className="about-value">
+                    <div className="about-value__icon">
+                      <Icon size={17} strokeWidth={1.9} aria-hidden="true" />
+                    </div>
+
+                    <div>
+                      <h4>{title}</h4>
+                      <p>{text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
           </div>
         </div>
-
-        <div className="about-premium__stats">
-          {companyStats.map(([value, label], index) => {
-            const StatIcon = STAT_ICONS[index % STAT_ICONS.length];
-
-            return (
-              <article key={`${label}-${value}`} className="about-stat-card">
-                <div className="about-stat-card__icon">
-                  <StatIcon size={22} strokeWidth={1.9} aria-hidden="true" />
-                </div>
-
-                <div className="about-stat-card__content">
-                  <p className="about-stat-card__label">{label}</p>
-                  <p className="about-stat-card__value">{value}</p>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-
-        <div className="about-premium__purpose">
-          <article className="about-purpose-card">
-            <div className="about-purpose-card__icon">
-              <Target size={34} strokeWidth={1.7} aria-hidden="true" />
-            </div>
-
-            <div className="about-purpose-card__content">
-              <p className="about-purpose-card__title">Misión</p>
-              <p className="about-purpose-card__text">
-                Desarrollamos soluciones tecnológicas que impulsan el crecimiento de
-                nuestros clientes, combinando innovación, calidad y compromiso para
-                generar resultados reales y sostenibles.
-              </p>
-            </div>
-          </article>
-
-          <article className="about-purpose-card">
-            <div className="about-purpose-card__icon">
-              <Telescope size={34} strokeWidth={1.7} aria-hidden="true" />
-            </div>
-
-            <div className="about-purpose-card__content">
-              <p className="about-purpose-card__title">Visión</p>
-              <p className="about-purpose-card__text">
-                Ser un referente en transformación digital en Colombia y Latinoamérica,
-                reconocidos por nuestra excelencia, innovación y el impacto positivo que
-                generamos en cada proyecto.
-              </p>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
