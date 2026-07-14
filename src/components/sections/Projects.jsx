@@ -31,10 +31,6 @@ const filters = [
     id: "IA",
     label: "IA",
   },
-  {
-    id: "Comunitarios",
-    label: "Comunitarios",
-  },
 ];
 
 function matchesFilter(project, activeFilter) {
@@ -75,12 +71,9 @@ export default function Projects() {
     filteredProjects[safeIndex];
 
   const secondaryProjects =
-    filteredProjects
-      .filter(
-        (_, index) => index !== safeIndex,
-      )
-      .slice(0, 3);
-
+    filteredProjects.filter(
+    (_, index) => index !== safeIndex,
+  );
   const handleFilterChange = (filterId) => {
     setActiveFilter(filterId);
     setActiveIndex(0);

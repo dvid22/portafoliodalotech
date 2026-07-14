@@ -170,35 +170,6 @@ export const projects = [
       },
     ],
   },
-  {
-    title: "EcoHorario",
-    shortCode: "EH",
-    group: "Comunitarios",
-    category: "Plataforma comunitaria",
-    description:
-      "Aplicación para consultar horarios de recolección, publicar información útil para recicladores, gestionar comentarios, mensajes y administración por sectores.",
-    shortDescription:
-      "Horarios de recolección, información útil, comentarios y administración por sectores.",
-    image: "/images/projects/ecohorario.svg",
-    tags: ["React", "Node.js", "PostgreSQL", "Cloud"],
-    benefits: [
-      {
-        title: "Comunidad",
-        description: "Información útil por sectores",
-        icon: UsersRound,
-      },
-      {
-        title: "Horarios",
-        description: "Consulta rápida de rutas",
-        icon: Boxes,
-      },
-      {
-        title: "Sostenibilidad",
-        description: "Apoyo a recicladores",
-        icon: Globe2,
-      },
-    ],
-  },
 ];
 
 export const processSteps = [
