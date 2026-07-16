@@ -649,6 +649,351 @@ const HERO_STYLES = `
       transition-duration: 0.01ms !important;
     }
   }
+
+  /* ===== FINAL COMPACT PREMIUM OVERRIDES ===== */
+  .dt-hero {
+    min-height: auto;
+    padding:
+      clamp(4.7rem, 5.8vw, 5.8rem)
+      clamp(0.75rem, 1.6vw, 1.25rem)
+      clamp(1.4rem, 2.2vw, 2rem);
+    background: #ffffff;
+  }
+
+  .dt-hero__glow {
+    display: none;
+  }
+
+  .dt-hero__grid {
+    opacity: 0.26;
+    background-size: 3.5rem 3.5rem;
+  }
+
+  .dt-hero__container {
+    width: min(82rem, 100%);
+  }
+
+  .dt-hero__main {
+    grid-template-columns:
+      minmax(310px, 0.88fr)
+      minmax(430px, 1.12fr);
+    gap: clamp(1.6rem, 3vw, 3rem);
+  }
+
+  .dt-hero__copy {
+    max-width: 35rem;
+    padding-block: 0;
+  }
+
+  .dt-hero__eyebrow {
+    min-height: 2rem;
+    padding: 0.42rem 0.82rem;
+    gap: 0.5rem;
+    border: 1px solid rgba(23, 109, 255, 0.09);
+    background: #f7faff;
+    font-size: 0.67rem;
+    box-shadow: none;
+  }
+
+  .dt-hero__eyebrow-dot {
+    width: 0.45rem;
+    box-shadow: 0 0 0 0.28rem rgba(32, 112, 245, 0.08);
+  }
+
+  .dt-hero__title {
+    margin: 1rem 0 0.9rem;
+    font-size: clamp(2.15rem, 3.35vw, 3.75rem);
+    line-height: 1.02;
+    letter-spacing: -0.044em;
+  }
+
+  .dt-hero__description {
+    max-width: 31rem;
+    font-size: 0.82rem;
+    line-height: 1.64;
+  }
+
+  .dt-hero__actions {
+    gap: 0.7rem;
+    margin-top: 1.15rem;
+  }
+
+  .dt-hero__button {
+    min-width: 10.5rem;
+    min-height: 2.8rem;
+    padding-inline: 1rem;
+    border-radius: 0.78rem;
+    font-size: 0.73rem;
+  }
+
+  .dt-hero__button-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .dt-hero__button-icon svg {
+    width: 0.92rem;
+    height: 0.92rem;
+  }
+
+  /* Visual más compacto y nítido */
+  .dt-hero__visual {
+    min-height: clamp(19rem, 33vw, 31rem);
+    aspect-ratio: 1.5 / 1;
+  }
+
+  .dt-hero__visual::before {
+    width: min(76%, 36rem);
+    height: 3.4rem;
+    bottom: 8%;
+    background: rgba(34, 105, 224, 0.075);
+    filter: blur(1.25rem);
+  }
+
+  .dt-hero__visual-frame {
+    width: min(92%, 46rem);
+  }
+
+  .dt-hero__scene-image {
+    filter:
+      drop-shadow(
+        0
+        0.9rem
+        1.45rem
+        rgba(29, 76, 161, 0.075)
+      )
+      saturate(1.02);
+    image-rendering: auto;
+    backface-visibility: visible;
+    transform: none;
+  }
+
+  .dt-hero__visual-light {
+    opacity: 0.65;
+    filter: blur(0.75rem);
+  }
+
+  /* Servicios inferiores compactos */
+  .dt-hero__services {
+    margin-top: 0.65rem;
+    padding: 0.65rem;
+    border-radius: 1.25rem;
+    background: #ffffff;
+    backdrop-filter: none;
+    box-shadow:
+      0 0.85rem 2rem rgba(19, 55, 123, 0.05),
+      inset 0 1px 0 #ffffff;
+  }
+
+  .dt-hero__services-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .dt-service {
+    min-height: 4.55rem;
+    padding: 0.6rem 0.7rem;
+    grid-template-columns: 2.65rem minmax(0, 1fr);
+    gap: 0.68rem;
+    border-radius: 0.95rem;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  .dt-service:hover {
+    transform: translateY(-0.08rem);
+    background: #ffffff;
+    box-shadow: 0 0.65rem 1.3rem rgba(22, 67, 151, 0.045);
+  }
+
+  .dt-service__icon-box {
+    width: 2.65rem;
+    border-radius: 0.82rem;
+    background: #f7faff;
+    box-shadow: none;
+  }
+
+  .dt-service__icon {
+    width: 1.55rem;
+  }
+
+  .dt-service__title {
+    margin-bottom: 0.16rem;
+    font-size: 0.72rem;
+  }
+
+  .dt-service__description {
+    font-size: 0.61rem;
+    line-height: 1.38;
+  }
+
+  @media (max-width: 1040px) {
+    .dt-hero__main {
+      grid-template-columns:
+        minmax(280px, 0.9fr)
+        minmax(380px, 1.1fr);
+      gap: 1.5rem;
+    }
+
+    .dt-hero__title {
+      font-size: clamp(2rem, 3.6vw, 3.25rem);
+    }
+
+    .dt-hero__visual {
+      min-height: 26rem;
+    }
+
+    .dt-hero__services-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 780px) {
+    .dt-hero {
+      padding:
+        4.5rem
+        0.7rem
+        1.4rem;
+    }
+
+    .dt-hero__main {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .dt-hero__copy {
+      max-width: 100%;
+      text-align: left;
+    }
+
+    .dt-hero__title {
+      max-width: 38rem;
+      font-size: clamp(2rem, 7.5vw, 2.9rem);
+    }
+
+    .dt-hero__description {
+      max-width: 36rem;
+      font-size: 0.76rem;
+    }
+
+    .dt-hero__visual {
+      min-height: 23rem;
+      aspect-ratio: 1.4 / 1;
+    }
+
+    .dt-hero__visual-frame {
+      width: min(100%, 42rem);
+    }
+
+    .dt-hero__services {
+      margin-top: 0.4rem;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .dt-hero {
+      padding:
+        4.25rem
+        0.45rem
+        1rem;
+    }
+
+    .dt-hero__eyebrow {
+      font-size: 0.58rem;
+    }
+
+    .dt-hero__title {
+      margin-top: 0.78rem;
+      font-size: clamp(1.8rem, 9vw, 2.35rem);
+      line-height: 1.03;
+    }
+
+    .dt-hero__description {
+      font-size: 0.7rem;
+      line-height: 1.55;
+    }
+
+    .dt-hero__actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem;
+      margin-top: 0.95rem;
+    }
+
+    .dt-hero__button {
+      min-width: 0;
+      min-height: 2.55rem;
+      padding-inline: 0.7rem;
+      font-size: 0.64rem;
+    }
+
+    .dt-hero__visual {
+      min-height: 18rem;
+      aspect-ratio: 1.25 / 1;
+    }
+
+    .dt-hero__visual-frame {
+      width: 100%;
+    }
+
+    .dt-hero__services {
+      padding: 0.45rem;
+      border-radius: 1rem;
+    }
+
+    .dt-hero__services-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.38rem;
+    }
+
+    .dt-service {
+      min-height: 4rem;
+      padding: 0.5rem;
+      grid-template-columns: 2.25rem minmax(0, 1fr);
+      gap: 0.5rem;
+      border-radius: 0.78rem;
+    }
+
+    .dt-service__icon-box {
+      width: 2.25rem;
+      border-radius: 0.7rem;
+    }
+
+    .dt-service__icon {
+      width: 1.3rem;
+    }
+
+    .dt-service__title {
+      font-size: 0.62rem;
+    }
+
+    .dt-service__description {
+      font-size: 0.53rem;
+      line-height: 1.3;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .dt-hero__actions {
+      grid-template-columns: 1fr;
+    }
+
+    .dt-hero__services-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .dt-hero__visual {
+      min-height: 16rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dt-service,
+    .dt-hero__button {
+      transition: none;
+    }
+  }
+
 `;
 
 function WebIcon() {

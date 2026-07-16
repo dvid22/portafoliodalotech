@@ -100,7 +100,7 @@ const SCENE_STYLES = `
     left: 19%;
     width: clamp(10.2rem, 20cqi, 13rem);
     aspect-ratio: 1.62 / 1;
-    transform: translateX(-50%);
+    translate: -50% 0;
   }
 
   .dtx-panel--mobile {
@@ -108,7 +108,7 @@ const SCENE_STYLES = `
     left: 52%;
     width: clamp(8rem, 15.5cqi, 10.2rem);
     aspect-ratio: 0.98 / 1;
-    transform: translateX(-50%);
+    translate: -50% 0;
   }
 
   .dtx-panel--saas {
@@ -116,7 +116,7 @@ const SCENE_STYLES = `
     left: 82%;
     width: clamp(10rem, 19cqi, 12.3rem);
     aspect-ratio: 1.12 / 1;
-    transform: translateX(-50%);
+    translate: -50% 0;
   }
 
   .dtx-panel__glass {
@@ -636,6 +636,130 @@ const SCENE_STYLES = `
     }
   }
 
+
+  /* =========================
+     MOBILE SCENE FINAL
+     Centrado real + transición nítida
+  ========================= */
+
+  .dtx-scene.is-compact {
+    overflow: hidden;
+    contain: layout paint;
+  }
+
+  .dtx-scene.is-compact .dtx-scene__ambient,
+  .dtx-scene.is-compact .dtx-scene__network,
+  .dtx-scene.is-compact .dtx-connector,
+  .dtx-scene.is-compact .dtx-node {
+    display: none;
+  }
+
+  .dtx-scene.is-compact .dtx-panel {
+    top: 5%;
+    left: 50%;
+    translate: -50% 0;
+    will-change: transform, opacity;
+  }
+
+  .dtx-scene.is-compact .dtx-panel__glass {
+    border-radius: 1rem;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+      0 0.9rem 2rem rgba(19, 60, 138, 0.11),
+      0 0.2rem 0.7rem rgba(34, 103, 217, 0.05),
+      inset 0 1px 0 #ffffff;
+  }
+
+  .dtx-scene.is-compact .dtx-panel__glass::after {
+    display: none;
+  }
+
+  .dtx-scene.is-compact .dtx-panel--web {
+    width: min(72%, 15rem);
+    aspect-ratio: 1.62 / 1;
+  }
+
+  .dtx-scene.is-compact .dtx-panel--mobile {
+    width: min(56%, 11.2rem);
+    aspect-ratio: 0.92 / 1.08;
+  }
+
+  .dtx-scene.is-compact .dtx-panel--saas {
+    width: min(68%, 14rem);
+    aspect-ratio: 1.14 / 1;
+  }
+
+  .dtx-scene.is-compact .dtx-panel--mobile .dtx-panel__glass {
+    box-shadow: none;
+  }
+
+  .dtx-scene.is-compact .dtx-mobile__phone {
+    left: 4%;
+    width: 62%;
+    height: 96%;
+  }
+
+  .dtx-scene.is-compact .dtx-mobile__build {
+    right: -1%;
+    width: 55%;
+  }
+
+  .dtx-scene.is-compact .dtx-scene__pager {
+    top: auto;
+    bottom: 4%;
+    display: flex;
+    gap: 0.42rem;
+  }
+
+  .dtx-scene.is-compact .dtx-scene__pager-dot {
+    width: 0.42rem;
+    height: 0.42rem;
+    background: #b7c9e4;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.82);
+  }
+
+  .dtx-scene.is-compact .dtx-scene__pager-dot.is-active {
+    width: 1.45rem;
+    background: #2473f5;
+  }
+
+  @container (max-width: 30rem) {
+    .dtx-scene.is-compact .dtx-panel {
+      top: 6%;
+    }
+
+    .dtx-scene.is-compact .dtx-panel--web {
+      width: min(78%, 14rem);
+    }
+
+    .dtx-scene.is-compact .dtx-panel--mobile {
+      width: min(62%, 10.5rem);
+    }
+
+    .dtx-scene.is-compact .dtx-panel--saas {
+      width: min(74%, 13rem);
+    }
+  }
+
+  @container (max-width: 22rem) {
+    .dtx-scene.is-compact .dtx-panel--web {
+      width: min(84%, 12.5rem);
+    }
+
+    .dtx-scene.is-compact .dtx-panel--mobile {
+      width: min(68%, 9.5rem);
+    }
+
+    .dtx-scene.is-compact .dtx-panel--saas {
+      width: min(80%, 11.5rem);
+    }
+
+    .dtx-scene.is-compact .dtx-scene__pager {
+      bottom: 2%;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .dtx-scene *,
     .dtx-scene *::before,
@@ -652,6 +776,7 @@ function PanelMotion({
   delay,
   duration,
   reduceMotion,
+  compact = false,
   children,
 }) {
   return (
@@ -660,49 +785,89 @@ function PanelMotion({
       initial={
         reduceMotion
           ? false
+          : compact
+            ? {
+                opacity: 0,
+                x: 34,
+                y: 8,
+                scale: 0.96,
+              }
+            : {
+                opacity: 0,
+                y: 18,
+                scale: 0.9,
+              }
+      }
+      animate={
+        compact
+          ? {
+              opacity: 1,
+              x: 0,
+              y: 0,
+              scale: 1,
+            }
           : {
-              opacity: 0,
-              y: 18,
-              scale: 0.88,
-              filter: "blur(9px)",
+              opacity: 1,
+              x: 0,
+              y: reduceMotion ? 0 : [0, -5, 0],
+              scale: 1,
             }
       }
-      animate={{
-        opacity: 1,
-        y: reduceMotion ? 0 : [0, -5, 0],
-        scale: 1,
-        filter: "blur(0px)",
-      }}
-      exit={{
-        opacity: 0,
-        y: 8,
-        scale: 0.92,
-        filter: "blur(5px)",
-      }}
-      transition={{
-        opacity: {
-          duration: 0.58,
-          delay,
-          ease: EASE,
-        },
-        scale: {
-          duration: 0.72,
-          delay,
-          ease: EASE,
-        },
-        filter: {
-          duration: 0.55,
-          delay,
-        },
-        y: reduceMotion
-          ? { duration: 0 }
+      exit={
+        compact
+          ? {
+              opacity: 0,
+              x: -34,
+              y: 4,
+              scale: 0.97,
+            }
           : {
-              duration,
-              delay: delay + 0.9,
-              repeat: Infinity,
-              ease: "easeInOut",
-            },
-      }}
+              opacity: 0,
+              y: 8,
+              scale: 0.93,
+            }
+      }
+      transition={
+        compact
+          ? {
+              opacity: {
+                duration: 0.34,
+                ease: EASE,
+              },
+              x: {
+                duration: 0.46,
+                ease: EASE,
+              },
+              y: {
+                duration: 0.46,
+                ease: EASE,
+              },
+              scale: {
+                duration: 0.46,
+                ease: EASE,
+              },
+            }
+          : {
+              opacity: {
+                duration: 0.58,
+                delay,
+                ease: EASE,
+              },
+              scale: {
+                duration: 0.72,
+                delay,
+                ease: EASE,
+              },
+              y: reduceMotion
+                ? { duration: 0 }
+                : {
+                    duration,
+                    delay: delay + 0.9,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  },
+            }
+      }
       style={{
         transformPerspective: 1200,
       }}
@@ -1635,6 +1800,7 @@ function CompactExperience({ id, reduceMotion, prefix }) {
         delay={0}
         duration={6}
         reduceMotion={reduceMotion}
+        compact
       >
         <WebExperience reduceMotion={reduceMotion} prefix={prefix} />
       </PanelMotion>
@@ -1648,6 +1814,7 @@ function CompactExperience({ id, reduceMotion, prefix }) {
         delay={0}
         duration={6.6}
         reduceMotion={reduceMotion}
+        compact
       >
         <MobileExperience reduceMotion={reduceMotion} prefix={prefix} />
       </PanelMotion>
@@ -1660,6 +1827,7 @@ function CompactExperience({ id, reduceMotion, prefix }) {
       delay={0}
       duration={6.2}
       reduceMotion={reduceMotion}
+      compact
     >
       <SaaSExperience reduceMotion={reduceMotion} prefix={prefix} />
     </PanelMotion>
@@ -1681,7 +1849,7 @@ export default function LogoScene() {
 
     const updateSize = () => {
       const width = root.getBoundingClientRect().width;
-      setCompact(width <= 575);
+      setCompact(width <= 700);
     };
 
     updateSize();
@@ -1697,7 +1865,7 @@ export default function LogoScene() {
 
     const interval = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % EXPERIENCES.length);
-    }, 4600);
+    }, 5200);
 
     return () => window.clearInterval(interval);
   }, [compact, reduceMotion]);
@@ -1706,7 +1874,11 @@ export default function LogoScene() {
     <>
       <style>{SCENE_STYLES}</style>
 
-      <div ref={rootRef} className="dtx-scene" aria-hidden="true">
+      <div
+        ref={rootRef}
+        className={`dtx-scene ${compact ? "is-compact" : ""}`}
+        aria-hidden="true"
+      >
         <div className="dtx-scene__ambient">
           <motion.span
             className="dtx-scene__halo dtx-scene__halo--web"
@@ -1836,7 +2008,7 @@ export default function LogoScene() {
 
         {compact && (
           <>
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <CompactExperience
                 key={EXPERIENCES[activeIndex]}
                 id={EXPERIENCES[activeIndex]}

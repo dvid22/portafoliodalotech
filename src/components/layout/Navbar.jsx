@@ -518,6 +518,195 @@ const NAVBAR_STYLES = `
       transition-duration: 0.01ms !important;
     }
   }
+
+  /* ===== FINAL NAVBAR PREMIUM ===== */
+  .dt-navbar {
+    --dt-navbar-height: clamp(4rem, 4.6vw, 4.45rem);
+  }
+
+  .dt-navbar__surface {
+    border-bottom: 1px solid rgba(18, 56, 124, 0.07);
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow:
+      0 0.3rem 1rem rgba(15, 48, 107, 0.035);
+    -webkit-backdrop-filter: blur(1rem) saturate(1.08);
+    backdrop-filter: blur(1rem) saturate(1.08);
+  }
+
+  .dt-navbar__container {
+    width: min(84rem, calc(100% - clamp(1.25rem, 4vw, 3.5rem)));
+    gap: clamp(1rem, 1.8vw, 2rem);
+  }
+
+  .dt-navbar__brand {
+    gap: 0.72rem;
+  }
+
+  .dt-navbar__logo-frame {
+    width: clamp(2.7rem, 3.2vw, 3.35rem);
+    border-radius: 0.9rem;
+    border-color: rgba(18, 57, 130, 0.08);
+    box-shadow:
+      0 0.4rem 1rem rgba(10, 38, 93, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
+  .dt-navbar__brand-copy {
+    display: flex;
+    align-items: center;
+  }
+
+  .dt-navbar__brand-name {
+    font-size: clamp(1.08rem, 1.4vw, 1.38rem);
+    letter-spacing: -0.038em;
+  }
+
+  .dt-navbar__brand-tagline {
+    display: none;
+  }
+
+  .dt-navbar__desktop {
+    gap: 0.6rem;
+  }
+
+  .dt-navbar__links {
+    gap: 0.18rem;
+    padding: 0.22rem;
+    border: 1px solid rgba(20, 57, 125, 0.055);
+    border-radius: 1rem;
+    background: #fbfdff;
+  }
+
+  .dt-navbar__link {
+    min-height: 2.35rem;
+    padding-inline: clamp(0.72rem, 0.95vw, 0.95rem);
+    border-radius: 0.72rem;
+    font-size: clamp(0.72rem, 0.82vw, 0.82rem);
+    font-weight: 500;
+  }
+
+  .dt-navbar__link:hover {
+    background: #f1f6ff;
+    transform: none;
+  }
+
+  .dt-navbar__link::after {
+    bottom: 0.18rem;
+    height: 2px;
+  }
+
+  .dt-navbar__link:hover::after,
+  .dt-navbar__link.is-active::after {
+    width: 1rem;
+  }
+
+  .dt-navbar__cta {
+    position: relative;
+    min-height: 2.45rem;
+    padding-inline: 1.15rem;
+    overflow: hidden;
+    border: 1px solid rgba(26, 98, 236, 0.22);
+    border-radius: 0.8rem;
+    background:
+      linear-gradient(135deg, #1888ff 0%, #2458ef 100%);
+    font-size: 0.78rem;
+    font-weight: 600;
+    box-shadow:
+      0 0.65rem 1.45rem rgba(28, 94, 231, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  }
+
+  .dt-navbar__cta::before {
+    content: "";
+    position: absolute;
+    top: -80%;
+    left: -40%;
+    width: 30%;
+    height: 260%;
+    transform: rotate(18deg);
+    background:
+      linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,0.5),
+        transparent
+      );
+    opacity: 0;
+    transition:
+      left 420ms ease,
+      opacity 180ms ease;
+  }
+
+  .dt-navbar__cta:hover {
+    transform: translateY(-0.08rem);
+    filter: none;
+    box-shadow:
+      0 0.85rem 1.7rem rgba(28, 94, 231, 0.23),
+      inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  }
+
+  .dt-navbar__cta:hover::before {
+    left: 118%;
+    opacity: 0.65;
+  }
+
+  .dt-navbar__toggle {
+    width: 2.55rem;
+    border-radius: 0.78rem;
+    background: #ffffff;
+    box-shadow:
+      0 0.4rem 0.9rem rgba(19, 57, 125, 0.055),
+      inset 0 1px 0 #ffffff;
+  }
+
+  .dt-navbar__mobile-layer {
+    background: rgba(8, 23, 52, 0.12);
+  }
+
+  .dt-navbar__mobile-panel {
+    padding: 0.65rem;
+    border-radius: 1.1rem;
+    background: #ffffff;
+    box-shadow:
+      0 1.3rem 3rem rgba(11, 38, 91, 0.16),
+      inset 0 1px 0 #ffffff;
+  }
+
+  .dt-navbar__mobile-link {
+    min-height: 2.75rem;
+    padding-inline: 0.85rem;
+    border-radius: 0.78rem;
+    font-size: 0.82rem;
+  }
+
+  .dt-navbar__mobile-cta {
+    min-height: 2.8rem;
+    margin-top: 0.45rem;
+    border-radius: 0.8rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  @media (max-width: 30rem) {
+    .dt-navbar__container {
+      width: calc(100% - 1rem);
+    }
+
+    .dt-navbar__brand-name {
+      font-size: 1.02rem;
+    }
+
+    .dt-navbar__logo-frame {
+      width: 2.5rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dt-navbar__cta::before {
+      display: none;
+    }
+  }
+
 `;
 
 export default function Navbar() {
@@ -629,10 +818,6 @@ export default function Navbar() {
                     Tech
                   </span>
                 </span>
-
-                <span className="dt-navbar__brand-tagline">
-                  DESARROLLAMOS EL FUTURO
-                </span>
               </span>
             </a>
 
@@ -666,7 +851,7 @@ export default function Navbar() {
                 href="#contacto"
                 className="dt-navbar__cta"
               >
-                Hablemos
+                Contacto
               </a>
             </div>
 
