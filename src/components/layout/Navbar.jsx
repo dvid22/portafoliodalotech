@@ -615,7 +615,7 @@ export default function Navbar() {
             >
               <span className="dt-navbar__logo-frame">
                 <img
-                  src="/images/dalotech-logo.jpeg"
+                  src="/images/favicon.png"
                   alt=""
                   className="dt-navbar__logo"
                   draggable="false"

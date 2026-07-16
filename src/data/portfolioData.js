@@ -92,7 +92,7 @@ export const projects = [
       "Plataforma integral para ventas, inventario, variantes por talla, múltiples imágenes por producto, apartados, catálogo público y operación con impresora térmica.",
     shortDescription:
       "Ventas, inventario, variantes, catálogo público y operación con impresora térmica.",
-    image: "/images/projects/master-caps.jpeg",
+    image: "/images/projects/master-caps.png",
     tags: ["React", "Firebase", "POS", "E-commerce"],
     benefits: [
       {
@@ -121,7 +121,7 @@ export const projects = [
       "Operación digital para restaurantes con menú QR, pedidos en tiempo real, clientes, reportes, control de ventas y acceso multidispositivo.",
     shortDescription:
       "Menú QR, pedidos en tiempo real, clientes, reportes y control de ventas.",
-    image: "/images/projects/menu-qr.svg",
+    image: "/images/projects/menu-qr.png",
     tags: ["SaaS", "QR", "React", "PostgreSQL"],
     benefits: [
       {
@@ -150,7 +150,7 @@ export const projects = [
       "Sistema web orientado a la educación inclusiva que registra, procesa y reconoce secuencias de Lengua de Señas Colombiana mediante visión por computador.",
     shortDescription:
       "Reconocimiento de secuencias de Lengua de Señas Colombiana mediante visión por computador.",
-    image: "/images/projects/sign-language.svg",
+    image: "/images/projects/sign-language.png",
     tags: ["Flask", "MediaPipe", "IA", "MongoDB"],
     benefits: [
       {
